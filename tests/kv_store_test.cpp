@@ -37,3 +37,59 @@ TEST(KVStoreTest, DelMissingKeyReturnsFalse) {
     KVStore store;
     EXPECT_FALSE(store.del("ghost"));
 }
+
+TEST(KVStoreLruTest, EvictsLeastRecentlyUsedWhenFull) {
+    KVStore store(2);
+    store.set("a", "1");
+    store.set("b", "2");
+    store.set("c", "3");   // full, so "a" is evicted
+
+    EXPECT_FALSE(store.get("a").has_value());
+    EXPECT_EQ(store.get("b").value_or(""), "2");
+    EXPECT_EQ(store.get("c").value_or(""), "3");
+    EXPECT_EQ(store.size(), 2u);
+}
+
+TEST(KVStoreLruTest, GetMarksKeyAsRecentlyUsed) {
+    KVStore store(2);
+    store.set("a", "1");
+    store.set("b", "2");
+    store.get("a");        // "a" is now most recent, so "b" is oldest
+    store.set("c", "3");
+
+    EXPECT_TRUE(store.get("a").has_value());
+    EXPECT_FALSE(store.get("b").has_value());
+}
+
+TEST(KVStoreLruTest, OverwriteMarksKeyAsRecentlyUsed) {
+    KVStore store(2);
+    store.set("a", "1");
+    store.set("b", "2");
+    store.set("a", "updated");
+    store.set("c", "3");
+
+    EXPECT_EQ(store.get("a").value_or(""), "updated");
+    EXPECT_FALSE(store.get("b").has_value());
+}
+
+TEST(KVStoreLruTest, OverwriteDoesNotEvict) {
+    KVStore store(2);
+    store.set("a", "1");
+    store.set("b", "2");
+    store.set("a", "updated");   // same key, so no new slot needed
+
+    EXPECT_EQ(store.size(), 2u);
+    EXPECT_TRUE(store.get("b").has_value());
+}
+
+TEST(KVStoreLruTest, DelFreesSpace) {
+    KVStore store(2);
+    store.set("a", "1");
+    store.set("b", "2");
+    store.del("a");
+    store.set("c", "3");         // there's room now, so nothing is evicted
+
+    EXPECT_TRUE(store.get("b").has_value());
+    EXPECT_TRUE(store.get("c").has_value());
+    EXPECT_EQ(store.size(), 2u);
+}

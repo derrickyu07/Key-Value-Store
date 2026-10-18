@@ -1,7 +1,7 @@
 #include "database.h"
 #include "wal.h"
 
-Database::Database(const std::string& logPath):log_(logPath) {
+Database::Database(const std::string& logPath, std::size_t capacity):store_(capacity), log_(logPath) {
 	log_.replay(store_);
 }
 
@@ -24,6 +24,7 @@ std::string Database::execute(const Command& cmd) {
 		return "";
 
 	case CommandType::Invalid:
-		break;
+		return "ERR invalid command";
 	}
+	return "ERR invalid command";
 }

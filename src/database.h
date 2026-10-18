@@ -7,7 +7,7 @@
 
 class Database {
 public:
-    explicit Database(const std::string& logPath);
+    explicit Database(const std::string& logPath, std::size_t capacity = 1000);
     std::string execute(const Command& cmd);   // returns the text to print
 
 private:
