@@ -13,6 +13,10 @@ Command parse(const std::string& line) {
 		cmd.type = CommandType::Exit;
 		return cmd;
 	}
+	if (name == "COMPACT") {
+		cmd.type = CommandType::Compact;
+		return cmd;
+	}
 
 	if (!(iss >> cmd.key)) return Command{};
 

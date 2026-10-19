@@ -93,3 +93,17 @@ TEST(KVStoreLruTest, DelFreesSpace) {
     EXPECT_TRUE(store.get("c").has_value());
     EXPECT_EQ(store.size(), 2u);
 }
+TEST(KVStoreLruTest, EntriesListedLeastRecentFirst) {
+    KVStore store;
+    store.set("a", "1");
+    store.set("b", "2");
+    store.set("c", "3");
+    store.get("a");   // order is now b, c, a
+
+    auto entries = store.entries();
+    ASSERT_EQ(entries.size(), 3u);
+    EXPECT_EQ(entries[0].first, "b");
+    EXPECT_EQ(entries[1].first, "c");
+    EXPECT_EQ(entries[2].first, "a");
+    EXPECT_EQ(entries[2].second, "1");
+}

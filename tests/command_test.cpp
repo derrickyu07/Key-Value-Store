@@ -45,3 +45,6 @@ TEST(ParseTest, UnknownCommandIsInvalid) {
 TEST(ParseTest, EmptyLineIsInvalid) {
     EXPECT_EQ(parse("").type, CommandType::Invalid);
 }
+TEST(ParseTest, ParsesCompact) {
+    EXPECT_EQ(parse("COMPACT").type, CommandType::Compact);
+}

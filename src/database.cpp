@@ -25,6 +25,9 @@ std::string Database::execute(const Command& cmd) {
 
 	case CommandType::Invalid:
 		return "ERR invalid command";
+	case CommandType::Compact:
+		log_.compact(store_);
+		return "OK";
 	}
 	return "ERR invalid command";
 }

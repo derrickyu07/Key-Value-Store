@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-enum class CommandType { Set, Get, Del, Exit, Invalid };
+enum class CommandType { Set, Get, Del, Exit, Invalid, Compact };
 
 struct Command {
     CommandType type = CommandType::Invalid;

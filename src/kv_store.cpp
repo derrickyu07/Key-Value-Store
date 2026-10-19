@@ -50,3 +50,12 @@ void KVStore::evict() {
 	map_.erase(lru_.back());
 	lru_.pop_back();
 }
+
+std::vector<std::pair<std::string, std::string>> KVStore::entries() const {
+	std::vector<std::pair<std::string,std::string>> result;
+	for (auto it = lru_.rbegin(); it != lru_.rend(); ++it) {
+		
+		result.emplace_back(*it, map_.at(*it).value);
+	}
+	return result;
+}

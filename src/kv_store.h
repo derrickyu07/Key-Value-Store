@@ -5,6 +5,8 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <vector>
+#include<utility>
 
 class KVStore {
 public:
@@ -14,6 +16,7 @@ public:
     std::optional<std::string> get(const std::string& key);
     bool del(const std::string& key);
     std::size_t size() const;
+    std::vector<std::pair<std::string, std::string>> entries() const;
 
 private:
     struct Entry {
