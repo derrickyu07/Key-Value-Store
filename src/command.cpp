@@ -30,6 +30,19 @@ Command parse(const std::string& line) {
 	else if (name == "GET") {
 		cmd.type = CommandType::Get;
 	}
+	else if (name == "TTL") {
+		cmd.type = CommandType::Ttl;
+	}
+	else if (name == "EXPIRE" ) {
+		std::string extra;
+		if (!(iss >> cmd.number) || (iss >> extra)) return Command{};
+		cmd.type = CommandType::Expire;
+	}
+	else if (name == "EXPIREAT") {
+		std::string extra;
+		if (!(iss >> cmd.number) || (iss >>extra)) return Command{};
+		cmd.type = CommandType::ExpireAt;
+	}
 	else if (name == "DEL") {
 		cmd.type = CommandType::Del;
 	}

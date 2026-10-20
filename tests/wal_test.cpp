@@ -2,6 +2,9 @@
 #include <filesystem>
 #include "wal.h"
 #include <fstream>
+#include <chrono>
+
+using namespace std::chrono_literals;
 
 class WalTest : public ::testing::Test {
 protected:
@@ -137,4 +140,41 @@ TEST_F(WalTest, AppendsAfterCompactStillWork) {
     log.replay(restored);
     EXPECT_TRUE(restored.get("a").has_value());
     EXPECT_TRUE(restored.get("b").has_value());
+}
+
+TEST_F(WalTest, ReplayRestoresExpiration) {
+    KVStore::TimePoint start{};
+    {
+        WriteAheadLog log(path);
+        log.appendSet("a", "1");
+        log.appendSet("b", "2");
+        log.appendExpireAt("a", start + 10s);
+    }
+
+    KVStore::TimePoint now = start + 4s;
+    KVStore store(10, [&] { return now; });
+    WriteAheadLog log(path);
+    log.replay(store);
+
+    EXPECT_EQ(store.ttlSeconds("a"), 6);    // deadline kept, not restarted
+    EXPECT_EQ(store.ttlSeconds("b"), -1);
+    now += 10s;
+    EXPECT_FALSE(store.get("a").has_value());
+}
+
+TEST_F(WalTest, CompactKeepsExpiration) {
+    KVStore::TimePoint now{};
+    KVStore store(10, [&] { return now; });
+    {
+        WriteAheadLog log(path);
+        log.appendSet("a", "1");
+        log.appendExpireAt("a", now + 10s);
+        log.replay(store);
+        log.compact(store);
+    }
+
+    KVStore restored(10, [&] { return now; });
+    WriteAheadLog log(path);
+    log.replay(restored);
+    EXPECT_EQ(restored.ttlSeconds("a"), 10);
 }

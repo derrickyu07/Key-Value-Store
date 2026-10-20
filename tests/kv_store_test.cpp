@@ -1,5 +1,62 @@
 #include <gtest/gtest.h>
 #include "kv_store.h"
+#include <chrono>
+
+using namespace std::chrono_literals;
+
+class TtlTest : public ::testing::Test {
+protected:
+    KVStore::TimePoint now{};                       // fake clock, starts at the epoch
+    KVStore store{ 10, [this] { return now; } };      // declared after now, so now exists first
+};
+
+TEST_F(TtlTest, KeyExpiresAfterDeadline) {
+    store.set("a", "1");
+    ASSERT_TRUE(store.expireAt("a", now + 10s));
+
+    now += 9s;
+    EXPECT_TRUE(store.get("a").has_value());
+
+    now += 2s;
+    EXPECT_FALSE(store.get("a").has_value());
+    EXPECT_EQ(store.size(), 0u);   // lazily removed on access
+}
+
+TEST_F(TtlTest, TtlReportsState) {
+    EXPECT_EQ(store.ttlSeconds("missing"), -2);
+    store.set("a", "1");
+    EXPECT_EQ(store.ttlSeconds("a"), -1);
+
+    store.expireAt("a", now + 10s);
+    EXPECT_EQ(store.ttlSeconds("a"), 10);
+    now += 4s;
+    EXPECT_EQ(store.ttlSeconds("a"), 6);
+}
+
+TEST_F(TtlTest, SetClearsExpiration) {
+    store.set("a", "1");
+    store.expireAt("a", now + 10s);
+    store.set("a", "2");   // overwriting removes the expiration, as in Redis
+
+    now += 20s;
+    EXPECT_EQ(store.get("a").value_or(""), "2");
+    EXPECT_EQ(store.ttlSeconds("a"), -1);
+}
+
+TEST_F(TtlTest, ExpireOnMissingKeyFails) {
+    EXPECT_FALSE(store.expireAt("ghost", now + 10s));
+}
+
+TEST_F(TtlTest, EntriesSkipExpiredKeys) {
+    store.set("a", "1");
+    store.set("b", "2");
+    store.expireAt("a", now + 1s);
+    now += 2s;
+
+    auto entries = store.entries();
+    ASSERT_EQ(entries.size(), 1u);
+    EXPECT_EQ(entries[0].first, "b");
+}
 
 TEST(KVStoreTest, GetMissingKeyReturnsNothing) {
 	KVStore store;

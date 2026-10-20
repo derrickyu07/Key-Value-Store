@@ -39,3 +39,26 @@ TEST_F(DatabaseTest, DataSurvivesRestart) {
     EXPECT_EQ(db.execute(parse("GET name")), "derrick");
     EXPECT_EQ(db.execute(parse("GET city")), "(nil)");
 }
+
+TEST_F(DatabaseTest, ExpireOnMissingKeyReturnsNil) {
+    Database db(path);
+    EXPECT_EQ(db.execute(parse("EXPIRE ghost 10")), "(nil)");
+}
+
+TEST_F(DatabaseTest, TtlWithoutExpirationIsMinusOne) {
+    Database db(path);
+    db.execute(parse("SET name derrick"));
+    EXPECT_EQ(db.execute(parse("TTL name")), "-1");
+}
+
+TEST_F(DatabaseTest, ExpiredKeyStaysGoneAfterRestart) {
+    {
+        Database db(path);
+        db.execute(parse("SET name derrick"));
+        EXPECT_EQ(db.execute(parse("EXPIRE name 0")), "OK");
+        EXPECT_EQ(db.execute(parse("GET name")), "(nil)");
+    }
+
+    Database db(path);
+    EXPECT_EQ(db.execute(parse("GET name")), "(nil)");
+}

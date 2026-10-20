@@ -12,6 +12,7 @@ public:
     void appendDel(const std::string& key);
     void replay(KVStore& store) const;
     void compact(const KVStore& store);
+    void appendExpireAt(const std::string& key, KVStore::TimePoint when);
 
 private:
     std::string path_;

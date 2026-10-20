@@ -28,6 +28,19 @@ std::string Database::execute(const Command& cmd) {
 	case CommandType::Compact:
 		log_.compact(store_);
 		return "OK";
+	case CommandType::Expire: {
+		if (store_.ttlSeconds(cmd.key) == -2) return "(nil)";
+		auto when = store_.now() + std::chrono::seconds(cmd.number);
+		log_.appendExpireAt(cmd.key, when);   // log first, as an absolute deadline
+		store_.expireAt(cmd.key, when);
+		return "OK";
 	}
+	case CommandType::ExpireAt:
+		return "ERR invalid command";   // log format only, not a user command
+
+	case CommandType::Ttl:
+		return std::to_string(store_.ttlSeconds(cmd.key));
+	}
+
 	return "ERR invalid command";
 }

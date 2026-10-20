@@ -48,3 +48,21 @@ TEST(ParseTest, EmptyLineIsInvalid) {
 TEST(ParseTest, ParsesCompact) {
     EXPECT_EQ(parse("COMPACT").type, CommandType::Compact);
 }
+
+TEST(ParseTest, ParsesExpire) {
+    Command cmd = parse("EXPIRE name 60");
+    EXPECT_EQ(cmd.type, CommandType::Expire);
+    EXPECT_EQ(cmd.key, "name");
+    EXPECT_EQ(cmd.number, 60);
+}
+
+TEST(ParseTest, ExpireWithoutNumberIsInvalid) {
+    EXPECT_EQ(parse("EXPIRE name").type, CommandType::Invalid);
+    EXPECT_EQ(parse("EXPIRE name soon").type, CommandType::Invalid);
+}
+
+TEST(ParseTest, ParsesTtl) {
+    Command cmd = parse("TTL name");
+    EXPECT_EQ(cmd.type, CommandType::Ttl);
+    EXPECT_EQ(cmd.key, "name");
+}
